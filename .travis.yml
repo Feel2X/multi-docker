@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t feel2x/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run feel2x/react-test npm test -- --coverage
+
+after_success:
+  # build production images
+  - docker build -t feel2x/multi-client ./client
+  - docker build -t feel2x/multi-nginx ./nginx
+  - docker build -t feel2x/multi-server ./server
+  - docker build -t feel2x/multi-worker ./worker
+
+  # log in to the docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take those images and push them to docker hub
+  - docker push feel2x/multi-client
+  - docker push feel2x/multi-nginx
+  - docker push feel2x/multi-server
+  - docker push feel2x/multi-worker
